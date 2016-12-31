@@ -37,8 +37,9 @@ def print_month(y, m):
 		if linelength == 7:
 			print(line)
 			linelength = 0
+
 			if weekno:
-				weekno += 1
+				weekno = (weekno + 1)%52
 				line = "{:2}  ".format(weekno)
 			else:
 				line = ""
