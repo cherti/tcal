@@ -2,7 +2,7 @@
 
 import datetime, calendar
 
-print_weeks = True
+print_weeks = False
 m = 12
 appointments = {}
 
@@ -45,8 +45,20 @@ def print_month(y, m):
 				line = ""
 
 
+def load_appointments(filepath):
+	with open(filepath, 'r') as f:
+		for line in f:
+			datestr, description = line.strip().split(" ", 1)
+			date = datetime.datetime.strptime(datestr, "%Y-%m-%d").date()
+
+			if datestr not in appointments:
+				appointments[datestr] = []
+
+			appointments[datestr].append((date, description))
 
 
 if __name__ == "__main__":
-	print_month(2016, 12)
+	today = datetime.date.today()
+	print_month(today.year, today.month)
+	load_appointments('./testdata')
 
