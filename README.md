@@ -5,7 +5,12 @@ cal-style terminal calender with appointment management.
 Work in progress, backwards-incompatible breakage might occur.
 
 
-## usage
+## Dependencies
+
+This script depends on `python-termcolor` and `python-dateutil`.
+
+
+## Usage
 
 Just use the tcal.py-script:
 
