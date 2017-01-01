@@ -11,9 +11,10 @@ today = datetime.date.today()
 
 def errprint(msg, code):
 	print(msg, file=sys.stderr)
+	exit(code)
 
 parser = argparse.ArgumentParser(description='tcal - terminal calendar')
-parser.add_argument('-s', '--store', action='store', dest='appointment_file', type=str, default=os.path.expanduser('./testdata'), help='file storing appointments')
+parser.add_argument('-s', '--store', action='store', dest='appointment_file', type=str, default=os.path.expanduser('~/.tcal-appointments'), help='file storing appointments')
 parser.add_argument('-m', '--month', action='store', dest='month', type=int, default=today.month, help='first month to display')
 parser.add_argument('-r', '--range', action='store', dest='monthrange', type=int, default=1, help='number of months to display')
 parser.add_argument('-y', '--year', action='store', dest='year', type=int, default=today.year, help='year of the first month to display')
@@ -114,7 +115,7 @@ def create_appointment(y, m, d):
 
 if __name__ == "__main__":
 	if not os.path.isfile(args.appointment_file):
-		errprint('Cannot find appointment file.', 1)
+		errprint('Cannot find appointment file. Please do "touch {}" first.'.format(args.appointment_file), 1)
 
 	load_appointments(args.appointment_file)
 
@@ -123,9 +124,9 @@ if __name__ == "__main__":
 		if args.monthrange > 1:
 			d = datetime.date(args.year, args.month, 1)
 
-		for i in range(args.monthrange):
-			d = d + relativedelta(months=1)
-			print_month(d.year, d.month)
+			for i in range(args.monthrange):
+				d = d + relativedelta(months=1)
+				print_month(d.year, d.month)
 
 	elif args.new:
 		create_appointment(today.year, today.month, today.day)
