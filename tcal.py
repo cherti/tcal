@@ -48,7 +48,7 @@ def print_month(y, m):
 
 	if args.print_weeks:
 		# prepare prefix for the weeks
-		weekdaysline = len(fmt_week_prefix(42))*" " + weekdaysline  # extend weekdaysline to be properly aligned with weeknumbers in front
+		weekdaysline = len(fmt_week_prefix(00))*" " + weekdaysline  # extend weekdaysline to be properly aligned with weeknumbers in front
 		_, isoweek, _ = datetime.date(y, m, 1).isocalendar()  # returns year, weekno and dayno of the year, we want the first weekno relevant
 		line = fmt_week_prefix(isoweek)
 	else:
@@ -114,6 +114,11 @@ def create_appointment(y, m, d):
 		y = int(input(    "year[{}]: ".format(y)) or y)
 		m = int(input(" month[{:2}]: ".format(m)) or m)
 		d = int(input("   day[{:2}]: ".format(d)) or d)
+		try:
+			datetime.date(y, m, d)
+		except ValueError as e:
+			errprint("invalid input: " + str(e), 2)
+
 		desc = input("Appointment description: ")
 
 		with open(args.appointment_file, 'a') as f:
