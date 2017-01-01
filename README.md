@@ -24,6 +24,7 @@ Just use the tcal.py-script:
 	 2017-01-15: baz
 	 2017-01-28: foobarbatutraine
 
+
 	usage: tcal.py [-h] [-s APPOINTMENT_FILE] [-m MONTH] [-r MONTHRANGE] [-y YEAR]
 	               [-w] [-n | -e]
 	
