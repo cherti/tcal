@@ -24,6 +24,7 @@ Just use the tcal.py-script:
 	 2017-01-15: baz
 	 2017-01-28: foobarbatutraine
 
+commandline-options:
 
 	usage: tcal.py [-h] [-s APPOINTMENT_FILE] [-m MONTH] [-r MONTHRANGE] [-y YEAR]
 	               [-w] [-n | -e]
@@ -33,7 +34,7 @@ Just use the tcal.py-script:
 	optional arguments:
 	  -h, --help            show this help message and exit
 	  -s APPOINTMENT_FILE, --store APPOINTMENT_FILE
-	                        file storing appointments
+	                        file storing appointments, defaults to ~/.tcal-appointments
 	  -m MONTH, --month MONTH
 	                        first month to display
 	  -r MONTHRANGE, --range MONTHRANGE
