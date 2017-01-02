@@ -43,6 +43,18 @@ fmt_day = lambda day: " {:2} ".format(day)
 fmt_monthyear = lambda y, m: datetime.date(y, m, 1).strftime("%B {}".format(y))
 fmt_week_prefix = lambda weekno: "{:2}  ".format(weekno)
 
+def date2str(d):
+	try:
+		return d.strftime("%Y-%m-%d")
+	except AttributeError:
+		errprint("Error: called date2str with something that does not seem to be a dateobject", 4)
+
+def str2date(s):
+	try:
+		return datetime.datetime.strptime(s, "%Y-%m-%d").date()
+	except:
+		errprint("Error: unparsable datestring: {}".format(s), 4)
+
 # compute the offset as half of the whitespaces the weekdaysline is longer than the monthyearline
 centering_whitespaces = lambda len_centered_string, len_full_line_string: max(int((len_full_line_string - len_centered_string)/2), 0)*" "
 
@@ -70,13 +82,12 @@ def print_month(y, m):
 		if day == 0:
 			line += blank_day
 		else:
-			identifier = date_id(y, m, day)
+			identifier = date2str(datetime.date(y, m, day))
 			if identifier in appointments:
 				month_appointment_identifier.append(identifier)  # remember that identifier to print appointments in the end
 				line += fmt_day_col(day)  # color that day
 			else:
 				line += fmt_day(day) # print without color
-
 
 
 		lineblocks += 1
@@ -106,7 +117,7 @@ def load_appointments(filepath):
 	with open(filepath, 'r') as f:
 		for line in f:
 			datestr, description = line.strip().split(" ", 1)
-			date = datetime.datetime.strptime(datestr, "%Y-%m-%d").date()
+			date = str2date(datestr)
 
 			if datestr not in appointments:
 				appointments[datestr] = []
@@ -114,35 +125,42 @@ def load_appointments(filepath):
 			appointments[datestr].append((date, description))
 
 
-def read_date_info(y, m, d):
+def read_date(basedate):
 	print('Which date are we speaking about?')
-	y = int(input(    "year[{}]: ".format(y)) or y)
-	m = int(input(" month[{:2}]: ".format(m)) or m)
-	d = int(input("   day[{:2}]: ".format(d)) or d)
+	in_y = input(    "year[{}]: ".format(basedate.year))
+	in_m = input(" month[{:2}]: ".format(basedate.month))
+	in_d = input("   day[{:2}]: ".format(basedate.day))
 
-	validate_date_input(y, m, d)
-
-	return y, m, d
-
-
-
-def create_appointment(y, m, d):
+	# only a single-date, let's go for the simple variant
+	y = int(in_y or basedate.year)
+	m = int(in_m or basedate.month)
+	d = int(in_d or basedate.day)
 
 	try:
-		y, m, d = read_date_info(y, m, d)
+		date = datetime.date(y, m, d)
+	except ValueError as e:
+		errprint("invalid input: " + str(e), 2)
+
+	return date
+
+
+def create_appointment(basedate):
+
+	try:
+		date = read_date(basedate)
 		desc = input("Appointment description: ")
 
 		with open(args.appointment_file, 'a') as f:
-			print("{}-{:02}-{:02} {}".format(y, m, d, desc), file=f)
+			print("{} {}".format(date2str(date), desc), file=f)
 
 	except KeyboardInterrupt:
 		print("\nTermination by user, no appointment has been added")
 
 
-def edit_appointments(y, m, d):
-	y, m, d = read_date_info(y, m, d)
+def edit_appointments(basedate):
+	date = read_date(basedate)
 
-	identifier = date_id(y, m, d)
+	identifier = date2str(date)
 
 	if identifier not in appointments:
 		print(':: no editable appointments on that date')
@@ -200,12 +218,12 @@ if __name__ == "__main__":
 			# by python-datetime, which might be overhead, but is sufficiently cheap to avoid cornercases by relying
 			# on a reference implementation that has already dealt with possible date-cornercases
 			dummydate = datetime.date(args.year, args.month, 1)
-			for i in range(args.monthrange):
+			for i in range(1, args.monthrange):
 				dummydate = dummydate + relativedelta(months=1)
 				print_month(dummydate.year, dummydate.month)
 
 	elif args.new:
-		create_appointment(today.year, today.month, today.day)
+		create_appointment(today)
 
 	elif args.edit:
-		edit_appointments(today.year, today.month, today.day)
+		edit_appointments(today)
