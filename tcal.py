@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import datetime, calendar, os, sys, argparse
+import datetime, calendar, os, sys, argparse, tempfile, subprocess, shutil
 from termcolor import colored
 from dateutil.relativedelta import relativedelta
 
@@ -13,6 +13,12 @@ cal = calendar.Calendar()
 def errprint(msg, code):
 	print(msg, file=sys.stderr)
 	exit(code)
+
+def validate_date_input(y, m, d):
+	try:
+		datetime.date(y, m, d)
+	except ValueError as e:
+		errprint("invalid input: " + str(e), 2)
 
 parser = argparse.ArgumentParser(description='tcal - terminal calendar')
 parser.add_argument('-s', '--store', action='store', dest='appointment_file', type=str, default=os.path.expanduser('~/.tcal-appointments'), help='file storing appointments')
@@ -108,17 +114,22 @@ def load_appointments(filepath):
 			appointments[datestr].append((date, description))
 
 
+def read_date_info(y, m, d):
+	print('Which date are we speaking about?')
+	y = int(input(    "year[{}]: ".format(y)) or y)
+	m = int(input(" month[{:2}]: ".format(m)) or m)
+	d = int(input("   day[{:2}]: ".format(d)) or d)
+
+	validate_date_input(y, m, d)
+
+	return y, m, d
+
+
+
 def create_appointment(y, m, d):
 
 	try:
-		y = int(input(    "year[{}]: ".format(y)) or y)
-		m = int(input(" month[{:2}]: ".format(m)) or m)
-		d = int(input("   day[{:2}]: ".format(d)) or d)
-		try:
-			datetime.date(y, m, d)
-		except ValueError as e:
-			errprint("invalid input: " + str(e), 2)
-
+		y, m, d = read_date_info(y, m, d)
 		desc = input("Appointment description: ")
 
 		with open(args.appointment_file, 'a') as f:
@@ -126,6 +137,49 @@ def create_appointment(y, m, d):
 
 	except KeyboardInterrupt:
 		print("\nTermination by user, no appointment has been added")
+
+
+def edit_appointments(y, m, d):
+	y, m, d = read_date_info(y, m, d)
+
+	identifier = date_id(y, m, d)
+
+	if identifier not in appointments:
+		print(':: no editable appointments on that date')
+		return
+
+	tmpfile = tempfile.NamedTemporaryFile()
+
+	with open(tmpfile.name, 'w') as f:
+		print("# Appointments on {}, edit or delete as you see fit:", file=f)
+		f.write('\n'.join(['{} {}'.format(identifier, description) for dateobj, description in appointments[identifier]]))
+
+	retval = subprocess.call([os.environ.get('EDITOR') or 'nano', tmpfile.name])
+	if retval != 0:
+		errprint("Your editor {0} exited nonzero with {1}, removing stale tmpfile and aborting".format(os.environ['EDITOR'], retval), 1)
+
+	print(":: parsing appointments")
+	with open(tmpfile.name, 'r') as f:
+		changed_appts = [line for line in f.read().strip().split('\n') if not line.startswith('#') and not line == ""]
+
+	# validate that we got proper input
+	for a in changed_appts:
+		try:
+			datestr, description = a.split(' ', 1)
+			y, m, d = datestr.split('-')
+			y, m, d = int(y), int(m), int(d)
+		except ValueError:
+			errprint("invalid file content: couldn't parse line: {}".format(a), 3)
+		validate_date_input(y, m, d)
+
+	new_appointment_file = tempfile.NamedTemporaryFile()
+
+	with open(args.appointment_file, 'r') as oaf, open(new_appointment_file.name, 'w') as naf:
+		unchanged_appts = [line for line in oaf.read().strip().split('\n') if not line.startswith(identifier)]
+		all_appts       = sorted(unchanged_appts + changed_appts)
+		naf.write('\n'.join(all_appts))
+
+	shutil.copy(new_appointment_file.name, args.appointment_file)
 
 
 if __name__ == "__main__":
@@ -154,4 +208,4 @@ if __name__ == "__main__":
 		create_appointment(today.year, today.month, today.day)
 
 	elif args.edit:
-		print("ahm, editing is not yet supported. Should be implemented soon-ish.")
+		edit_appointments(today.year, today.month, today.day)
