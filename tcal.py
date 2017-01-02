@@ -43,9 +43,13 @@ fmt_day = lambda day: " {:2} ".format(day)
 fmt_monthyear = lambda y, m: datetime.date(y, m, 1).strftime("%B {}".format(y))
 fmt_week_prefix = lambda weekno: "{:2}  ".format(weekno)
 
-def date2str(d):
+# helperfunctions for str <-> date
+def date2str(d, localized=False):
 	try:
-		return d.strftime("%Y-%m-%d")
+		if localized:
+			return d.strftime("%d.%m.%Y")
+		else:
+			return d.strftime("%Y-%m-%d")
 	except AttributeError:
 		errprint("Error: called date2str with something that does not seem to be a dateobject", 4)
 
@@ -54,6 +58,7 @@ def str2date(s):
 		return datetime.datetime.strptime(s, "%Y-%m-%d").date()
 	except:
 		errprint("Error: unparsable datestring: {}".format(s), 4)
+
 
 # compute the offset as half of the whitespaces the weekdaysline is longer than the monthyearline
 centering_whitespaces = lambda len_centered_string, len_full_line_string: max(int((len_full_line_string - len_centered_string)/2), 0)*" "
@@ -106,11 +111,12 @@ def print_month(y, m):
 
 	# now print appointments of that month
 	for date in month_appointment_identifier:
-		prefix = " {}:".format(date)
+		prefix = " {}:".format(date2str(str2date(date), localized=True))
 		for a_date, a_desc in appointments[date]:
 			print("{} {}".format(prefix, a_desc))
 			prefix = " "*len(prefix)
-	print()
+
+	print('\n')
 
 
 def load_appointments(filepath):
