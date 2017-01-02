@@ -35,7 +35,7 @@ args = parser.parse_args()
 
 
 # templates for display mechanism
-weekdaysline = " Mo  Di  Mi  Do  Fr  Sa  So"
+baseweekdaysline = " Mo  Di  Mi  Do  Fr  Sa  So"
 blank_day = " "*4
 date_id = lambda y, m, d: "{}-{:02}-{:02}".format(y, m, d)
 fmt_day_col = lambda day: " {} ".format(colored("{:2}".format(day), appointmentdaycolor))
@@ -62,7 +62,7 @@ centering_whitespaces = lambda len_centered_string, len_full_line_string: max(in
 def print_month(y, m):
 	month_appointment_identifier = []    # collecting the appointments to be printed below this month
 	monthyearline = fmt_monthyear(y, m)  # headerline of the month
-	global weekdaysline                  # use weekdaysline that was defined in the templates
+	weekdaysline  = baseweekdaysline     # use weekdaysline that was defined in the templates
 
 	if args.print_weeks:
 		# prepare prefix for the weeks
