@@ -29,7 +29,7 @@ Just use the tcal.py-script:
 	 2017-01-15: baz
 	 2017-01-28: foobarbatutraine
 
-commandline-options:
+### commandline-options:
 
 	usage: tcal.py [-h] [-s APPOINTMENT_FILE] [-m MONTH] [-r MONTHRANGE] [-y YEAR]
 	               [-w] [-n | -e]
@@ -48,6 +48,12 @@ commandline-options:
 	  -w, --weeks           show weeks when printing calendar
 	  -n, --new             add new appointment
 	  -e, --edit            edit appointments for specific date
+
+### Multi-day-appointments:
+
+To set an appointment for more than one day, just give a spread like `16-19` when asked for year, month or date upon creation of a new appointment.
+
+The spread will be applied to the field you specified in only, i.e. a spread in the month field will create one appointment at the specified date per month included in the spread.
 
 
 ## Configuration

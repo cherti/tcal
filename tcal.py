@@ -141,27 +141,59 @@ def read_date(basedate):
 	except KeyboardInterrupt:
 		print("\nTermination by user, no appointment has been added")
 
-	# only a single-date, let's go for the simple variant
-	y = int(in_y or basedate.year)
-	m = int(in_m or basedate.month)
-	d = int(in_d or basedate.day)
+	if '-' in in_y or '-' in in_m or '-' in in_d:
+		dates = []
+		# multi-day
+		if '-' in in_d:
+			d_start, d_stop = in_d.split('-')
+			d_start, d_stop = int(d_start), int(d_stop)
+		else:
+			d_start = d_stop = int(in_d or basedate.day)
+
+		if '-' in in_m:
+			m_start, m_stop = in_m.split('-')
+			m_start, m_stop = int(m_start), int(m_stop)
+		else:
+			m_start = m_stop = int(in_m or basedate.month)
+
+		if '-' in in_y:
+			y_start, y_stop = in_y.split('-')
+			y_start, y_stop = int(y_start), int(y_stop)
+		else:
+			y_start = y_stop = int(in_y or basedate.year)
+
+		for d in range(d_start, d_stop+1):
+			for m in range(m_start, m_stop+1):
+				for y in range(y_start, y_stop+1):
+
+					try:
+						date = datetime.date(y, m, d)
+					except ValueError as e:
+						errprint("invalid input: " + str(e), 2)
+
+					dates.append(date)
+
+		return dates
+
+	else:
+		# only a single-date, let's go for the simple variant
+		y = int(in_y or basedate.year)
+		m = int(in_m or basedate.month)
+		d = int(in_d or basedate.day)
+
+		try:
+			date = datetime.date(y, m, d)
+		except ValueError as e:
+			errprint("invalid input: " + str(e), 2)
+
+		return [date]
+
+
+def create_appointment(date, desc):
 
 	try:
-		date = datetime.date(y, m, d)
-	except ValueError as e:
-		errprint("invalid input: " + str(e), 2)
-
-	return [date]
-
-
-def create_appointment(date):
-
-	try:
-		desc = input("Appointment description: ")
-
 		with open(args.appointment_file, 'a') as f:
 			print("{} {}".format(date2str(date), desc), file=f)
-
 	except KeyboardInterrupt:
 		print("\nTermination by user, no appointment has been added")
 
@@ -233,8 +265,9 @@ if __name__ == "__main__":
 
 	elif args.new:
 		dates = read_date(today)
+		desc = input("Appointment description: ")
 		for date in dates:
-			create_appointment(date)
+			create_appointment(date, desc)
 
 	elif args.edit:
 		dates = read_date(today)
