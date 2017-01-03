@@ -26,6 +26,7 @@ parser.add_argument('-m', '--month', action='store', dest='month', type=int, def
 parser.add_argument('-r', '--range', action='store', dest='monthrange', type=int, default=1, help='number of months to display')
 parser.add_argument('-y', '--year', action='store', dest='year', type=int, default=today.year, help='year of the first month to display')
 parser.add_argument('-w', '--weeks', action='store_true', default=False, dest='print_weeks', help='show weeks when printing calendar')
+parser.add_argument('-f', '--format', action='store', default="%d.%m.%Y", dest='date_format', help='format of printed dates, must be valid python-date-template')
 
 group = parser.add_mutually_exclusive_group(required=False)
 group.add_argument('-n', '--new', action='store_true', default=False, dest='new', help='add new appointment')
@@ -47,7 +48,7 @@ fmt_week_prefix = lambda weekno: "{:2}  ".format(weekno)
 def date2str(d, localized=False):
 	try:
 		if localized:
-			return d.strftime("%d.%m.%Y")
+			return d.strftime(args.date_format)
 		else:
 			return d.strftime("%Y-%m-%d")
 	except AttributeError:
@@ -132,10 +133,13 @@ def load_appointments(filepath):
 
 
 def read_date(basedate):
-	print('Which date are we speaking about?')
-	in_y = input(    "year[{}]: ".format(basedate.year))
-	in_m = input(" month[{:2}]: ".format(basedate.month))
-	in_d = input("   day[{:2}]: ".format(basedate.day))
+	try:
+		print('Which date are we speaking about?')
+		in_y = input(    "year[{}]: ".format(basedate.year))
+		in_m = input(" month[{:2}]: ".format(basedate.month))
+		in_d = input("   day[{:2}]: ".format(basedate.day))
+	except KeyboardInterrupt:
+		print("\nTermination by user, no appointment has been added")
 
 	# only a single-date, let's go for the simple variant
 	y = int(in_y or basedate.year)
@@ -147,13 +151,12 @@ def read_date(basedate):
 	except ValueError as e:
 		errprint("invalid input: " + str(e), 2)
 
-	return date
+	return [date]
 
 
-def create_appointment(basedate):
+def create_appointment(date):
 
 	try:
-		date = read_date(basedate)
 		desc = input("Appointment description: ")
 
 		with open(args.appointment_file, 'a') as f:
@@ -229,7 +232,11 @@ if __name__ == "__main__":
 				print_month(dummydate.year, dummydate.month)
 
 	elif args.new:
-		create_appointment(today)
+		dates = read_date(today)
+		for date in dates:
+			create_appointment(date)
 
 	elif args.edit:
-		edit_appointments(today)
+		dates = read_date(today)
+		for date in dates:
+			edit_appointments(date)
