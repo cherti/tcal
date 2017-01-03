@@ -8,6 +8,7 @@ Work in progress, backwards-incompatible breakage might occur.
 ## Dependencies
 
 This script depends on `python-termcolor` and `python-dateutil`.
+It is written for Python version 3 and upwards, lowest version it has been tested with is Python 3.5.2. (If you have an older version of Python and things work for you, feel free to drop me a line.)
 
 
 ## Usage
