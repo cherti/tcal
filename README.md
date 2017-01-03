@@ -54,7 +54,7 @@ Just use the tcal.py-script:
 
 To set an appointment for more than one day, just give a spread like `16-19` when asked for year, month or date upon creation of a new appointment.
 
-The spread will be applied to the field you specified in only, i.e. a spread in the month field will create one appointment at the specified date per month included in the spread.
+The spread will be applied to the field you specified in only, i.e. a spread in the month field will create one appointment at the specified day per month included in the spread.
 
 
 ## Configuration
