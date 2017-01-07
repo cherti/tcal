@@ -5,22 +5,38 @@ from termcolor import colored
 from dateutil.relativedelta import relativedelta
 from collections import namedtuple
 
-Appointment = namedtuple('Appointment', ['date', 'time', 'location', 'description'])
-appointments = {}
-appointmentdaycolor = 'cyan'
-
-today = datetime.date.today()
-cal = calendar.Calendar()
-
 def errprint(msg, code):
 	print(msg, file=sys.stderr)
 	exit(code)
 
-def validate_date_input(y, m, d):
+Appointment = namedtuple('Appointment', ['date', 'time', 'location', 'description'])
+appointmentdaycolor = 'cyan'
+appointments = {}
+appt2str = lambda a: "{} {} {} {}".format(date2str(a.date), a.time or '-', a.location or '-', a.description)
+
+def str2appt(s):
 	try:
-		datetime.date(y, m, d)
-	except ValueError as e:
-		errprint("invalid input: " + str(e), 2)
+		datestr, t, location, description = s.split(" ", 3)
+	except ValueError:
+		errprint("Error: malformed line: {}".format(s), 7)
+
+	date = str2date(datestr)
+
+	if t == '-':
+		t = None
+	else:
+		try:
+			t = time.strptime(t, "%H:%M")
+			t = "{:02}:{:02}".format(t.tm_hour, t.tm_min)
+		except ValueError as e:
+			errprint("Error: malformed line: {}\n{}".format(s, str(e)), 6)
+
+	location = location if location != '-' else None
+	return Appointment(str2date(datestr), t, location, description)
+
+
+today = datetime.date.today()
+cal = calendar.Calendar()
 
 parser = argparse.ArgumentParser(description='tcal - terminal calendar')
 parser.add_argument('-s', '--store', action='store', dest='appointment_file', type=str, default=os.path.expanduser('~/.tcal-appointments'), help='file storing appointments')
@@ -141,18 +157,12 @@ def print_month(y, m):
 def load_appointments(filepath):
 	with open(filepath, 'r') as f:
 		for line in f:
-			datestr, t, location, description = line.strip().split(" ", 3)
-			print(location)
-			date = str2date(datestr)
-
-			t = t if t != '-' else None
-			location = location if location != '-' else None
+			line = line.strip()
+			datestr, _ = line.split(" ", 1)
 
 			if datestr not in appointments:
 				appointments[datestr] = []
-
-			a = Appointment(str2date(datestr), t, location, description)
-			appointments[datestr].append(a)
+			appointments[datestr].append(str2appt(line))
 
 
 def read_date(basedate):
@@ -230,14 +240,12 @@ def create_appointment(appt):
 
 	try:
 		with open(args.appointment_file, 'a') as f:
-			print("{} {} {} {}".format(date2str(appt.date), appt.time, appt.location, appt.description), file=f)
+			print(appt2str(appt), file=f)
 	except KeyboardInterrupt:
 		print("\nTermination by user, no appointment has been added")
 
 
 def edit_appointments(basedate):
-	date = read_date(basedate)
-
 	identifier = date2str(date)
 
 	if identifier not in appointments:
@@ -247,8 +255,8 @@ def edit_appointments(basedate):
 	tmpfile = tempfile.NamedTemporaryFile()
 
 	with open(tmpfile.name, 'w') as f:
-		print("# Appointments on {}, edit or delete as you see fit:", file=f)
-		f.write('\n'.join(['{} {}'.format(identifier, description) for dateobj, description in appointments[identifier]]))
+		print("# Appointments on {}, edit or delete as you see fit:".format(identifier), file=f)
+		f.write('\n'.join([appt2str(a) for a in appointments[identifier]]))
 
 	retval = subprocess.call([os.environ.get('EDITOR') or 'nano', tmpfile.name])
 	if retval != 0:
@@ -259,20 +267,16 @@ def edit_appointments(basedate):
 		changed_appts = [line for line in f.read().strip().split('\n') if not line.startswith('#') and not line == ""]
 
 	# validate that we got proper input
-	for a in changed_appts:
-		try:
-			datestr, description = a.split(' ', 1)
-			y, m, d = datestr.split('-')
-			y, m, d = int(y), int(m), int(d)
-		except ValueError:
-			errprint("invalid file content: couldn't parse line: {}".format(a), 3)
-		validate_date_input(y, m, d)
+	validated_changed_appts = []
+	for astr in changed_appts:
+		# no need to catch errors, errorhandling is done in str2appt already, we just want to see if it parses
+		validated_changed_appts.append(appt2str(str2appt(astr)))
 
 	new_appointment_file = tempfile.NamedTemporaryFile()
 
 	with open(args.appointment_file, 'r') as oaf, open(new_appointment_file.name, 'w') as naf:
 		unchanged_appts = [line for line in oaf.read().strip().split('\n') if not line.startswith(identifier)]
-		all_appts       = sorted(unchanged_appts + changed_appts)
+		all_appts       = sorted(unchanged_appts + validated_changed_appts)
 		naf.write('\n'.join(all_appts))
 
 	shutil.copy(new_appointment_file.name, args.appointment_file)
@@ -314,3 +318,4 @@ if __name__ == "__main__":
 		dates = read_date(today)
 		for date in dates:
 			edit_appointments(date)
+
