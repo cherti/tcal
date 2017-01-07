@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
-import datetime, calendar, os, sys, argparse, tempfile, subprocess, shutil
+import datetime, calendar, os, sys, argparse, tempfile, subprocess, shutil, time
 from termcolor import colored
 from dateutil.relativedelta import relativedelta
+from collections import namedtuple
 
+Appointment = namedtuple('Appointment', ['date', 'time', 'location', 'description'])
 appointments = {}
 appointmentdaycolor = 'cyan'
 
@@ -22,12 +24,19 @@ def validate_date_input(y, m, d):
 
 parser = argparse.ArgumentParser(description='tcal - terminal calendar')
 parser.add_argument('-s', '--store', action='store', dest='appointment_file', type=str, default=os.path.expanduser('~/.tcal-appointments'), help='file storing appointments')
+
+# range of interest
+parser.add_argument('-y', '--year', action='store', dest='year', type=int, default=today.year, help='year of the first month to display')
 parser.add_argument('-m', '--month', action='store', dest='month', type=int, default=today.month, help='first month to display')
 parser.add_argument('-r', '--range', action='store', dest='monthrange', type=int, default=1, help='number of months to display')
-parser.add_argument('-y', '--year', action='store', dest='year', type=int, default=today.year, help='year of the first month to display')
-parser.add_argument('-w', '--weeks', action='store_true', default=False, dest='print_weeks', help='show weeks when printing calendar')
-parser.add_argument('-f', '--format', action='store', default="%d.%m.%Y", dest='date_format', help='format of printed dates, must be valid python-date-template')
 
+# display properties
+parser.add_argument('-f', '--format', action='store', default="%d.%m.%Y", dest='date_format', help='format of printed dates, must be valid python-date-template')
+parser.add_argument('-w', '--weeks', action='store_true', default=False, dest='weeks', help='show weeks when printing calendar')
+parser.add_argument('-t', '--time', action='store_true', default=False, dest='time', help='show time (if set) when printing appointments')
+parser.add_argument('-l', '--location', action='store_true', default=False, dest='location', help='show location (if set) when printing appointments')
+
+# changing stored state
 group = parser.add_mutually_exclusive_group(required=False)
 group.add_argument('-n', '--new', action='store_true', default=False, dest='new', help='add new appointment')
 group.add_argument('-e', '--edit', action='store_true', default=False, dest='edit', help='edit appointments for specific date')
@@ -70,7 +79,7 @@ def print_month(y, m):
 	monthyearline = fmt_monthyear(y, m)  # headerline of the month
 	weekdaysline  = baseweekdaysline     # use weekdaysline that was defined in the templates
 
-	if args.print_weeks:
+	if args.weeks:
 		# prepare prefix for the weeks
 		weekdaysline = len(fmt_week_prefix(00))*" " + weekdaysline  # extend weekdaysline to be properly aligned with weeknumbers in front
 		_, isoweek, _ = datetime.date(y, m, 1).isocalendar()  # returns year, weekno and dayno of the year, we want the first weekno relevant
@@ -79,10 +88,11 @@ def print_month(y, m):
 		line = ""
 		isoweek = None
 
+	# print headers
 	print(centering_whitespaces(len(monthyearline), len(weekdaysline)) + monthyearline)
 	print(weekdaysline)
 
-
+	# now print calendar-view
 	lineblocks = 0
 	for day, weekday in cal.itermonthdays2(y, m):
 		if day == 0:
@@ -109,13 +119,21 @@ def print_month(y, m):
 				line = ""
 	print()
 
-
 	# now print appointments of that month
 	for date in month_appointment_identifier:
-		prefix = " {}:".format(date2str(str2date(date), localized=True))
-		for a_date, a_desc in appointments[date]:
-			print("{} {}".format(prefix, a_desc))
-			prefix = " "*len(prefix)
+		prefix = " {}: ".format(date2str(str2date(date), localized=True))
+		for a in sorted(appointments[date], key=lambda x: x.time):
+			line = prefix
+			if a.time and args.time:
+				# strip potential leading zero and replace them with whitespace
+				t = " "+a.time[1:] if a.time.startswith('0') else a.time
+				line += "[{}] ".format(t)
+			line += a.description
+			if a.location and args.location:
+				line += " ({})".format(a.location)
+			print(line)
+
+			prefix = " "*len(prefix)  # blank out date to not print it on each line
 
 	print('\n')
 
@@ -123,13 +141,18 @@ def print_month(y, m):
 def load_appointments(filepath):
 	with open(filepath, 'r') as f:
 		for line in f:
-			datestr, description = line.strip().split(" ", 1)
+			datestr, t, location, description = line.strip().split(" ", 3)
+			print(location)
 			date = str2date(datestr)
+
+			t = t if t != '-' else None
+			location = location if location != '-' else None
 
 			if datestr not in appointments:
 				appointments[datestr] = []
 
-			appointments[datestr].append((date, description))
+			a = Appointment(str2date(datestr), t, location, description)
+			appointments[datestr].append(a)
 
 
 def read_date(basedate):
@@ -189,11 +212,25 @@ def read_date(basedate):
 		return [date]
 
 
-def create_appointment(date, desc):
+def read_time():
+
+	t = input("Time [-]: ") or "-"
+
+	if t == "-":
+		return t
+
+	try:
+		t = time.strptime(t, "%H:%M")
+		return "{:02}:{:02}".format(t.tm_hour, t.tm_min)
+	except ValueError as e:
+		errprint("Error: " + str(e), 6)
+
+
+def create_appointment(appt):
 
 	try:
 		with open(args.appointment_file, 'a') as f:
-			print("{} {}".format(date2str(date), desc), file=f)
+			print("{} {} {} {}".format(date2str(appt.date), appt.time, appt.location, appt.description), file=f)
 	except KeyboardInterrupt:
 		print("\nTermination by user, no appointment has been added")
 
@@ -266,8 +303,12 @@ if __name__ == "__main__":
 	elif args.new:
 		dates = read_date(today)
 		desc = input("Appointment description: ")
+		t = read_time()
+		location = input("Location [-]: ") or "-"
+
 		for date in dates:
-			create_appointment(date, desc)
+			a = Appointment(date, t, location, desc)
+			create_appointment(a)
 
 	elif args.edit:
 		dates = read_date(today)
