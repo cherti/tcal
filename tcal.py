@@ -255,7 +255,10 @@ def edit_appointments(basedate):
 	tmpfile = tempfile.NamedTemporaryFile()
 
 	with open(tmpfile.name, 'w') as f:
-		print("# Appointments on {}, edit or delete as you see fit:".format(identifier), file=f)
+		print("# Appointments on {}, edit or delete as you see fit.".format(identifier), file=f)
+		print("# Format is: 'YYYY-MM-DD time location description'", file=f)
+		print("# Time must be HH:MM or '-' if no time is specified. ", file=f)
+		print("# location may not have whitespaces in it and be '-' if no location is specified.", file=f)
 		f.write('\n'.join([appt2str(a) for a in appointments[identifier]]))
 
 	retval = subprocess.call([os.environ.get('EDITOR') or 'nano', tmpfile.name])
