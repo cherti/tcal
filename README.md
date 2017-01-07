@@ -32,8 +32,8 @@ Just use the tcal.py-script:
 
 ### commandline-options:
 
-	usage: tcal.py [-h] [-s APPOINTMENT_FILE] [-m MONTH] [-r MONTHRANGE] [-y YEAR]
-	               [-w] [-n | -e]
+	usage: tcal.py [-h] [-s APPOINTMENT_FILE] [-y YEAR] [-m MONTH] [-r MONTHRANGE]
+	               [-f DATE_FORMAT] [-w] [-t] [-l] [-n | -e]
 	
 	tcal - terminal calendar
 	
@@ -41,12 +41,17 @@ Just use the tcal.py-script:
 	  -h, --help            show this help message and exit
 	  -s APPOINTMENT_FILE, --store APPOINTMENT_FILE
 	                        file storing appointments, defaults to ~/.tcal-appointments
+	  -y YEAR, --year YEAR  year of the first month to display
 	  -m MONTH, --month MONTH
 	                        first month to display
 	  -r MONTHRANGE, --range MONTHRANGE
 	                        number of months to display
-	  -y YEAR, --year YEAR  year of the first month to display
+	  -f DATE_FORMAT, --format DATE_FORMAT
+	                        format of printed dates, must be valid python-date-
+	                        template
 	  -w, --weeks           show weeks when printing calendar
+	  -t, --time            show time (if set) when printing appointments
+	  -l, --location        show location (if set) when printing appointments
 	  -n, --new             add new appointment
 	  -e, --edit            edit appointments for specific date
 
