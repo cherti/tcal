@@ -64,8 +64,7 @@ args = parser.parse_args()
 baseweekdaysline = " Mo  Di  Mi  Do  Fr  Sa  So"
 blank_day = " "*4
 date_id = lambda y, m, d: "{}-{:02}-{:02}".format(y, m, d)
-fmt_day_col = lambda day: " {} ".format(colored("{:2}".format(day), appointmentdaycolor))
-fmt_day = lambda day: " {:2} ".format(day)
+fmt_day = lambda day, color=None, attrs=None: " {} ".format(colored("{:2}".format(day), color, attrs=attrs or []))
 fmt_monthyear = lambda y, m: datetime.date(y, m, 1).strftime("%B {}".format(y))
 fmt_week_prefix = lambda weekno: "{:2}  ".format(weekno)
 
@@ -114,12 +113,22 @@ def print_month(y, m):
 		if day == 0:
 			line += blank_day
 		else:
-			identifier = date2str(datetime.date(y, m, day))
+			date = datetime.date(y, m, day)
+			identifier = date2str(date)
+
+			if date == today:
+				attrs = ["reverse"]
+			else:
+				attrs = []
+
 			if identifier in appointments:
 				month_appointment_identifier.append(identifier)  # remember that identifier to print appointments in the end
-				line += fmt_day_col(day)  # color that day
+				color = appointmentdaycolor
+				attrs += ["bold"]
 			else:
-				line += fmt_day(day) # print without color
+				color = None
+
+			line += fmt_day(day, color, attrs=attrs)
 
 
 		lineblocks += 1
