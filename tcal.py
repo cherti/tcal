@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
 import datetime, calendar, os, sys, argparse, tempfile, subprocess, shutil, time
-from termcolor import colored
-from dateutil.relativedelta import relativedelta
 from collections import namedtuple
 
 def errprint(msg, code):
 	print(msg, file=sys.stderr)
 	exit(code)
+
+try:
+	from termcolor import colored
+	from dateutil.relativedelta import relativedelta
+except ModuleNotFoundError as e:
+	errprint("Could not find module {}, maybe it is not installed?".format(e.name), 404)
+
+
 
 Appointment = namedtuple('Appointment', ['date', 'time', 'location', 'description'])
 appointmentdaycolor = 'cyan'
