@@ -170,7 +170,10 @@ def print_month(y, m):
 			if dateobj < today:
 				print(colored(line + "gone", 'white'))
 			else:
-				print(line)
+				if dateobj == today:
+					print(colored(line, attrs=['bold']))
+				else:
+					print(line)
 
 			prefix = " "*len(prefix)  # blank out date to not print it on each line
 
