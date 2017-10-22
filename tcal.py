@@ -152,7 +152,8 @@ def print_month(y, m):
 
 	# now print appointments of that month
 	for date in month_appointment_identifier:
-		prefix = " {}: ".format(date2str(str2date(date), localized=True))
+		dateobj = str2date(date)
+		prefix = " {}: ".format(date2str(dateobj, localized=True))
 		for a in sorted(appointments[date], key=lambda x: x.time):
 			line = prefix
 			if a.time and args.time:
@@ -162,7 +163,10 @@ def print_month(y, m):
 			line += a.description
 			if a.location and args.location:
 				line += " ({})".format(a.location)
-			print(line)
+			if dateobj < today:
+				print(colored(line + "gone", 'white'))
+			else:
+				print(line)
 
 			prefix = " "*len(prefix)  # blank out date to not print it on each line
 
