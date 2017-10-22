@@ -57,6 +57,7 @@ parser.add_argument('-f', '--format', action='store', default="%d.%m.%Y", dest='
 parser.add_argument('-w', '--weeks', action='store_true', default=False, dest='weeks', help='show weeks when printing calendar')
 parser.add_argument('-t', '--time', action='store_true', default=False, dest='time', help='show time (if set) when printing appointments')
 parser.add_argument('-l', '--location', action='store_true', default=False, dest='location', help='show location (if set) when printing appointments')
+parser.add_argument('-p', '--past', action='store_true', default=False, dest='past', help='print appointments in the past')
 
 # changing stored state
 group = parser.add_mutually_exclusive_group(required=False)
@@ -153,6 +154,9 @@ def print_month(y, m):
 	# now print appointments of that month
 	for date in month_appointment_identifier:
 		dateobj = str2date(date)
+		if dateobj < today and not args.past:
+			continue # don't print appointments in the past
+
 		prefix = " {}: ".format(date2str(dateobj, localized=True))
 		for a in sorted(appointments[date], key=lambda x: x.time):
 			line = prefix
